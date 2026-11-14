@@ -1,0 +1,34 @@
+name: Build APK from ZIP
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: |
+          ZIP=$(ls *.zip | head -n 1)
+          echo "Using $ZIP"
+          mkdir -p src && unzip -q "$ZIP" -d src
+          DIR=$(dirname "$(find src -name settings.gradle | head -n 1)")
+          echo "PROJECT_DIR=$DIR" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      - name: Build debug APK
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: gradle assembleDebug --no-daemon
+      - name: Collect APK
+        run: cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" DrWael-Admin.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DrWael-Admin-apk
+          path: DrWael-Admin.apk
