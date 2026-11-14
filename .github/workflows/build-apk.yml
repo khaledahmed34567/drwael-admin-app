@@ -1,14 +1,18 @@
 name: Build APK from ZIP
 on:
   push:
+    branches: [ main, master ]
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      VER_NAME: 1.0.${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Unzip project
         run: |
           ZIP=$(ls *.zip | head -n 1)
@@ -16,19 +20,49 @@ jobs:
           mkdir -p src && unzip -q "$ZIP" -d src
           DIR=$(dirname "$(find src -name settings.gradle | head -n 1)")
           echo "PROJECT_DIR=$DIR" >> "$GITHUB_ENV"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: gradle/actions/setup-gradle@v3
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" >/dev/null
+
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-      - name: Build debug APK
+
+      - name: Build release APK
         working-directory: ${{ env.PROJECT_DIR }}
-        run: gradle assembleDebug --no-daemon
+        run: |
+          set -o pipefail
+          gradle assembleRelease --no-daemon --stacktrace \
+            -PverCode=${{ github.run_number }} -PverName=${{ env.VER_NAME }} 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+
+      - name: Show errors in summary
+        if: failure()
+        run: |
+          echo '### Build errors' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -E -B2 -A8 "error:|FAILURE|What went wrong|Could not|SDK location" build.log | head -80 >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Collect APK
-        run: cp "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" DrWael-Admin.apk
+        run: cp "$PROJECT_DIR/app/build/outputs/apk/release/app-release.apk" DrWael-Admin.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: DrWael-Admin-apk
           path: DrWael-Admin.apk
+
+      - name: Publish release (used by in-app update)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VER_NAME }}
+          name: الإصدار ${{ env.VER_NAME }}
+          files: DrWael-Admin.apk
+          make_latest: true
