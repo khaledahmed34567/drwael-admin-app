@@ -5,13 +5,17 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: build-apk
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     env:
       VER_NAME: 1.0.${{ github.run_number }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Unzip project
         run: |
@@ -21,15 +25,10 @@ jobs:
           DIR=$(dirname "$(find src -name 'settings.gradle*' | head -n 1)")
           echo "PROJECT_DIR=$DIR" >> "$GITHUB_ENV"
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Check Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools" || true
 
       - uses: gradle/actions/setup-gradle@v4
         with:
@@ -51,7 +50,9 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Collect APK
-        run: cp "$PROJECT_DIR"/app/build/outputs/apk/release/*.apk DrWael-Admin.apk
+        run: |
+          cp "$PROJECT_DIR"/app/build/outputs/apk/release/*.apk DrWael-Admin.apk
+          sha256sum DrWael-Admin.apk | tee -a "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:
