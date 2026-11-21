@@ -249,6 +249,7 @@ html[data-theme=dark] .stat{background:#20243d;color:#cfd4ff}html[data-theme=dar
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="reviews-chart.js"></script>
 <style id="dwx-css">
 /* DWX: إضافات التصميم (إضافية فقط — تُحمَّل بعد التصميم الأصلي) */
 @media print{html{display:none!important}}
@@ -2052,7 +2053,8 @@ async function aReviews(){
     const L=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
     const avg=L.length?(L.reduce((s,x)=>s+(+x.rating||0),0)/L.length).toFixed(1):"0.0";
     const fc=window._rfc||"",fr=window._rfr||"0",fq=window._rfq||"";
-    ab().innerHTML=`<div class="plat"><div class="main"><b>${L.length}</b><br>إجمالي التقييمات</div><div class="main"><b>${avg} ★</b><br>متوسط التقييم</div></div><div class="sp"></div><div style="display:flex;gap:8px;flex-wrap:wrap"><select class="fi" id="rf_c" style="flex:1;min-width:160px"><option value="">كل الدورات</option>${CS.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join("")}</select><select class="fi" id="rf_r" style="width:140px"><option value="0">كل التقييمات</option>${[5,4,3,2,1].map(n=>`<option value="${n}">${n} نجوم</option>`).join("")}</select></div><input class="fi" id="rq" placeholder="بحث باسم الطالب أو نص التقييم" style="margin-top:8px"><div id="rl"></div>`;
+    ab().innerHTML=`<div class="plat"><div class="main"><b>${L.length}</b><br>إجمالي التقييمات</div><div class="main"><b>${avg} ★</b><br>متوسط التقييم</div></div><div class="card" style="margin-top:12px"><div class="lab">توزيع التقييمات (1 – 5 نجوم) عبر جميع الدورات</div><div id="rv-chart"></div></div><div class="sp"></div><div style="display:flex;gap:8px;flex-wrap:wrap"><select class="fi" id="rf_c" style="flex:1;min-width:160px"><option value="">كل الدورات</option>${CS.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join("")}</select><select class="fi" id="rf_r" style="width:140px"><option value="0">كل التقييمات</option>${[5,4,3,2,1].map(n=>`<option value="${n}">${n} نجوم</option>`).join("")}</select></div><input class="fi" id="rq" placeholder="بحث باسم الطالب أو نص التقييم" style="margin-top:8px"><div id="rl"></div>`;
+    if(window.renderReviewsChart)window.renderReviewsChart($("#rv-chart"),L);
     $("#rf_c").value=fc;$("#rf_r").value=fr;$("#rq").value=fq;
     const draw=()=>{
       const cVal=$("#rf_c").value,rVal=+$("#rf_r").value,q=$("#rq").value.trim().toLowerCase();
