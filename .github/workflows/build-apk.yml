@@ -24,6 +24,8 @@ jobs:
           mkdir -p src && unzip -q "$ZIP" -d src
           DIR=$(dirname "$(find src -name 'settings.gradle*' | head -n 1)")
           echo "PROJECT_DIR=$DIR" >> "$GITHUB_ENV"
+          cp -f public/admin.html "$DIR/app/src/main/assets/admin.html"
+          cp -f public/reviews-chart.js "$DIR/app/src/main/assets/reviews-chart.js"
 
       - uses: actions/setup-java@v5
         with:
