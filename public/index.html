@@ -2439,8 +2439,8 @@ function sheetHTML(own,ver){
      +'<label class="dwx-sr"><span>كتم الصوت داخل التطبيق فقط</span><input type="checkbox" id="dwx-mute"'+(CFGN.mute?" checked":"")+'></label>'
      +'<label class="dwx-sr"><span>مستوى الصوت</span><input type="range" id="dwx-vol" min="0.1" max="1" step="0.1" value="'+CFGN.vol+'"></label>'+rows
    :'<div class="dwx-note">'+ic("bell",18)+'<span>أصوات الإشعارات يحدّدها المدير الرئيسي ولا يمكن تغييرها من هنا. تصلك الإشعارات دائمًا بالصوت حتى لو كان التطبيق مكتومًا.</span></div>';
-  var th=lsGet("dwx_theme")||"auto";
-  var look='<div class="dwx-sec">المظهر</div><div class="dwx-sr"><span>وضع الألوان</span><select id="dwx-th" class="fi dwx-sel"><option value="auto"'+(th==="auto"?" selected":"")+'>تلقائي (حسب الهاتف)</option><option value="light"'+(th==="light"?" selected":"")+'>فاتح</option><option value="dark"'+(th==="dark"?" selected":"")+'>داكن</option></select></div>';
+  var th=lsGet("dwx_theme")||"auto";var thBtn=function(v,l){return'<button type="button" class="chip dwx-thb'+(th===v?' on':'')+'" data-th="'+v+'">'+l+'</button>'};
+  var look='<div class="dwx-sec">المظهر</div><div class="dwx-sr"><span>وضع الألوان</span><span class="chips" style="margin:0">'+thBtn("auto","تلقائي")+thBtn("light","فاتح")+thBtn("dark","داكن")+'</span></div>';
   var tools=ver!=null?'<div class="dwx-sec">الأمان والأدوات</div><div class="dwx-sr"><span>قفل التطبيق تلقائيًا</span><select id="dwx-lk" class="fi dwx-sel"><option value="0">فورًا عند الخروج</option><option value="30">بعد 30 ثانية</option><option value="60">بعد دقيقة</option><option value="300">بعد 5 دقائق</option><option value="-1">بدون قفل</option></select></div><div class="dwx-sr"><span>قفل التطبيق الآن</span><button class="chip" id="dwx-lknow">'+ic("lock",15)+' قفل</button></div><div class="dwx-sr"><span>اختبار الإشعارات والصوت</span><button class="chip" id="dwx-tst">'+ic("bell",15)+' إشعار تجريبي</button></div>':'';
   return'<button class="dwx-x" id="dwx-sx">'+ic("x",20)+'</button><div class="dwx-h">'+(own?"إعدادات الإشعارات":"الإعدادات")+'</div>'+snd+look+tools
    +(ver!=null?'<div class="dwx-verbox"><div class="dwx-vi"><b>الإصدار '+esc(String(ver))+'</b><small>تحقق من وجود نسخة أحدث</small></div><button class="dwx-ubtn sm" id="dwx-chk"><span class="dwx-ubi">'+ic("refresh",16)+'</span><span>فحص التحديثات</span></button></div><div class="dwx-sr"><span>الدخول بالبصمة على هذا الجهاز</span><button class="chip" id="dwx-fpoff">إلغاء</button></div>':'');
@@ -2453,7 +2453,7 @@ function openSettings(){
   if(NB){$("#dwx-chk",o).onclick=function(){NB.checkUpdate();toast("جارٍ الفحص…")};$("#dwx-fpoff",o).onclick=function(){NB.clearSecret();toast("تم إلغاء الدخول بالبصمة")}}
   $("#dwx-sx",o).onclick=function(){o.remove()};
   o.addEventListener("click",function(e){if(e.target===o)o.remove()});
-  $("#dwx-th",o).onchange=function(){lsSet("dwx_theme",this.value);applyTheme(this.value)};
+  $$(".dwx-thb",o).forEach(function(b){b.onclick=function(){var v=b.getAttribute("data-th");lsSet("dwx_theme",v);applyTheme(v);$$(".dwx-thb",o).forEach(function(x){x.classList.toggle("on",x===b)});toast(v==="dark"?"تم التفعيل: داكن":v==="light"?"تم التفعيل: فاتح":"تم التفعيل: تلقائي حسب الهاتف")}});
   if(NB){
     var lk=$("#dwx-lk",o);try{lk.value=String(NB.getLockSec())}catch(e){}
     lk.onchange=function(){try{NB.setLockSec(+this.value);toast("تم حفظ مدة القفل")}catch(e){}};
